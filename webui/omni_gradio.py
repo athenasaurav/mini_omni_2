@@ -125,9 +125,9 @@ def main(port=None):
             )
             audio.on_additional_outputs(lambda c: c, outputs=[conversation])
     if port is not None:
-        demo.queue().launch(share=False, server_name="0.0.0.0", server_port=port)
+        demo.queue().launch(share=True, server_name="0.0.0.0", server_port=port)
     else:
-        demo.queue().launch()
+        demo.queue().launch(share=True)
 
 
 if __name__ == "__main__":
