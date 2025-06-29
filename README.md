@@ -1,4 +1,3 @@
-
 # Mini-Omni2
 
 <p align="center">
@@ -24,11 +23,20 @@ Mini-Omni2 is an **omni-interactive** model. It can **understand image, audio an
 ## Updates
 
 - **2024.10:** Release the model, technical report, inference and chat demo code.
+- **2025.06:** Added FastAPI server (`server_fast.py`) for lower-latency streaming, improved VAD for faster response, and enhanced logging for latency analysis in the Gradio client.
 
 ## Features
 ✅ **Multimodal interaction**: with the ability to understand images, speech and text, just like GPT-4o.
 
 ✅ **Real-time speech-to-speech** conversational capabilities. No extra ASR or TTS models required, just like [Mini-Omni](https://github.com/gpt-omni/mini-omni).
+
+✅ **Optimized for 24kHz audio**: The model and SNAC decoder are tuned for 24kHz audio. (16kHz is not supported.)
+
+✅ **Concurrent requests**: The FastAPI server supports multiple users and concurrent streaming requests.
+
+✅ **Streaming audio and text**: Both audio and text are streamed to the client as soon as they are available, with sub-second first-token latency.
+
+✅ **Latency logging**: The Gradio client now logs UTC timestamps for each request, and for the first audio and text token received, making it easy to analyze end-to-end latency.
 
 <!-- ✅ **Streaming audio output**: with first-chunk latency of audio stream less than 0.3s. -->
 
@@ -66,17 +74,27 @@ NOTE: you need to start the server before running the streamlit or gradio demo w
 sudo apt-get install ffmpeg
 conda activate omni
 cd mini-omni2
+# Recommended: FastAPI server for best streaming performance
+pip install fastapi uvicorn
+uvicorn server_fast:app --host 0.0.0.0 --port 60808 --workers 1
+
+# (Legacy) Flask server
 python3 server.py --ip '0.0.0.0' --port 60808
 ```
 
+**Troubleshooting:**
+- If you see an error about `--http h2` with Uvicorn, just omit it. Uvicorn's default HTTP/1.1 streaming is fast and sufficient.
+- For HTTP/2, consider using Hypercorn or a reverse proxy (see docs).
 
-- run streamlit demo
+- run gradio or streamlit demo
 
 NOTE: you need to run streamlit **locally** with PyAudio installed. 
 
 ```sh
 pip install PyAudio==0.2.14
 API_URL=http://0.0.0.0:60808/chat streamlit run webui/omni_streamlit.py
+# or for Gradio
+API_URL=http://0.0.0.0:60808/chat python3 webui/omni_gradio.py
 ```
 
 
@@ -108,6 +126,12 @@ Here are more cases of Mini-Omni2:
 <p align="center">
     <img src="./data/figures/samples.png" width="100%"/>
 </p> -->
+
+## Advanced: VAD Tuning and Latency Analysis
+
+- **VAD (Voice Activity Detection) is tuned for low latency**: window size 512, min speech/silence 100ms, pad 50ms, and ONNX threading uses all CPU cores.
+- **Gradio client logs**: Each request prints UTC timestamps for when the request is sent, and when the first audio and text token are received. This allows you to measure true end-to-end latency easily.
+- **Concurrent streaming**: The FastAPI server and Gradio client support concurrent requests and streaming for multiple users.
 
 ## FAQ
 
