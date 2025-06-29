@@ -8,6 +8,7 @@ import numpy as np
 import requests
 import io
 from pydub import AudioSegment
+import datetime
 
 
 API_URL = os.getenv("API_URL", None)
@@ -44,6 +45,9 @@ else:
     
 def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str | None):
 
+    def utc_now():
+        return datetime.datetime.utcnow().isoformat() + 'Z'
+
     sampling_rate, audio_np = audio
     audio_np = audio_np.squeeze()
 
@@ -65,8 +69,10 @@ def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str |
         files = {"audio": base64_encoded}
         if img is not None:
             files["image"] = str(base64.b64encode(open(img, "rb").read()), encoding="utf-8")
-        print("sending request to server")
+        print(f"[{utc_now()}] sending request to server")
         resp_text = ""
+        first_audio_logged = False
+        first_text_logged = False
         with requests.post(API_URL, json=files, stream=True) as response:
             try:
                 buffer = b''
@@ -79,10 +85,16 @@ def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str |
                             # audio_data = base64.b64decode(audio_data)
                             output_audio_bytes += audio_data
                             audio_array = np.frombuffer(audio_data, dtype=np.int16).reshape(1, -1)
+                            if not first_audio_logged:
+                                print(f"[{utc_now()}] first audio token received from server")
+                                first_audio_logged = True
                             yield (OUT_RATE, audio_array, "mono")
                         elif b'Content-Type: text/plain' in frame:
                             text_data = frame.split(b'\r\n\r\n', 1)[1].decode()
                             resp_text += text_data
+                            if not first_text_logged and len(text_data) > 0:
+                                print(f"[{utc_now()}] first text token received from server: {text_data[:50]}")
+                                first_text_logged = True
                             if len(text_data) > 0:
                                 conversation[-1]["content"] = resp_text
                                 yield AdditionalOutputs(conversation)
@@ -96,7 +108,7 @@ def main(port=None):
         gr.HTML(
             """
         <h1 style='text-align: center'>
-        Mini-Omni-2 Chat (Powered by WebRTC ⚡️)
+        Zen S2S Model Chat (Powered by WebRTC ⚡️)
         </h1>
         """
         )
@@ -117,7 +129,7 @@ def main(port=None):
             
             audio.stream(
                 fn=ReplyOnPause(
-                    response, output_sample_rate=OUT_RATE, output_frame_size=480
+                    response, output_sample_rate=OUT_RATE, output_frame_size=120
                 ),
                 inputs=[audio, conversation, img],
                 outputs=[audio],

@@ -49,8 +49,8 @@ Create a new conda environment and install the required packages:
 conda create -n omni python=3.10
 conda activate omni
 
-git clone https://github.com/athenasaurav/mini_omni_2.git
-cd mini_omni_2
+git clone https://github.com/gpt-omni/mini-omni2.git
+cd mini-omni2
 pip install -r requirements.txt
 ```
 

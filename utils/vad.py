@@ -29,12 +29,12 @@ class VadOptions(NamedTuple):
       speech_pad_ms: Final speech chunks are padded by speech_pad_ms each side
     """
 
-    threshold: float = 0.5
-    min_speech_duration_ms: int = 250
+    threshold: float = 0.45
+    min_speech_duration_ms: int = 100
     max_speech_duration_s: float = float("inf")
-    min_silence_duration_ms: int = 2000
-    window_size_samples: int = 1024
-    speech_pad_ms: int = 400
+    min_silence_duration_ms: int = 100
+    window_size_samples: int = 512
+    speech_pad_ms: int = 50
 
 
 def get_speech_timestamps(
@@ -249,9 +249,11 @@ class SileroVADModel:
                 "Applying the VAD filter requires the onnxruntime package"
             ) from e
 
+        import os
+        num_threads = os.cpu_count() or 1
         opts = onnxruntime.SessionOptions()
-        opts.inter_op_num_threads = 1
-        opts.intra_op_num_threads = 1
+        opts.inter_op_num_threads = num_threads
+        opts.intra_op_num_threads = num_threads
         opts.log_severity_level = 4
 
         self.session = onnxruntime.InferenceSession(
