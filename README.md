@@ -95,6 +95,8 @@ pip install PyAudio==0.2.14
 API_URL=http://0.0.0.0:60808/chat streamlit run webui/omni_streamlit.py
 # or for Gradio
 API_URL=http://0.0.0.0:60808/chat python3 webui/omni_gradio.py
+#or for Gradio on external server
+API_URL=http://<EXT_SERVER_IP>:60808/chat python3 webui/omni_gradio.py
 ```
 
 +## Web Demo (Gradio)
