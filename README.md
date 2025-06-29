@@ -97,6 +97,17 @@ API_URL=http://0.0.0.0:60808/chat streamlit run webui/omni_streamlit.py
 API_URL=http://0.0.0.0:60808/chat python3 webui/omni_gradio.py
 ```
 
++## Web Demo (Gradio)
++
++You can run the Gradio web demo from any machine (local or remote) by pointing `API_URL` to your server's public IP address:
++
++```sh
++API_URL=http://<EXT_SERVER_IP>:60808/chat python3 webui/omni_gradio.py
++```
++
++Replace `<EXT_SERVER_IP>` with the external/public IP of your server.
++
++This will launch a Gradio web UI and provide a public share link for easy access and testing.
 
 **Local test**
 
