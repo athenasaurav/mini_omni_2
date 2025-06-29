@@ -43,7 +43,7 @@ else:
     rtc_configuration = None
 
     
-def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str | None):
+def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str | None = None):
 
     def utc_now():
         return datetime.datetime.utcnow().isoformat() + 'Z'
@@ -122,8 +122,8 @@ def main(port=None):
                             mode="send-receive",
                             modality="audio",
                         )
-                    with gr.Column():
-                        img = gr.Image(label="Image", type="filepath")
+                    # with gr.Column():
+                    #     img = gr.Image(label="Image", type="filepath")
             with gr.Column():
                 conversation = gr.Chatbot(label="Conversation", type="messages")
             
@@ -131,7 +131,8 @@ def main(port=None):
                 fn=ReplyOnPause(
                     response, output_sample_rate=OUT_RATE, output_frame_size=120
                 ),
-                inputs=[audio, conversation, img],
+                # inputs=[audio, conversation, img],
+                inputs=[audio, conversation],
                 outputs=[audio],
                 time_limit=90,
             )
