@@ -51,6 +51,11 @@ def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str |
     sampling_rate, audio_np = audio
     audio_np = audio_np.squeeze()
 
+    # Log input audio details
+    audio_duration_sec = len(audio_np) / sampling_rate
+    audio_size_kb = len(audio_np) * audio_np.dtype.itemsize / 1024
+    print(f"[{utc_now()}] input audio: {audio_duration_sec:.2f}s, {audio_size_kb:.1f}KB, {sampling_rate}Hz")
+
     audio_buffer = io.BytesIO()
     segment = AudioSegment(
         audio_np.tobytes(),
@@ -73,6 +78,7 @@ def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str |
         resp_text = ""
         first_audio_logged = False
         first_text_logged = False
+        total_audio_tokens = 0
         with requests.post(API_URL, json=files, stream=True) as response:
             try:
                 buffer = b''
@@ -85,9 +91,28 @@ def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str |
                             # audio_data = base64.b64decode(audio_data)
                             output_audio_bytes += audio_data
                             audio_array = np.frombuffer(audio_data, dtype=np.int16).reshape(1, -1)
+                            total_audio_tokens += len(audio_data)
                             if not first_audio_logged:
-                                print(f"[{utc_now()}] first audio token received from server")
+                                audio_token_size = len(audio_data)
+                                audio_samples = len(audio_array.flatten())
+                                audio_duration_ms = (audio_samples / OUT_RATE) * 1000
+                                print(f"[{utc_now()}] first audio token received from server: {audio_token_size} bytes, {audio_samples} samples, {audio_duration_ms:.1f}ms")
                                 first_audio_logged = True
+                            
+                            # Print actual audio token values
+                            audio_values = audio_array.flatten()
+                            if len(audio_values) > 0:
+                                # Show first few and last few values
+                                if len(audio_values) <= 10:
+                                    print(f"[{utc_now()}] audio tokens: {audio_values.tolist()}")
+                                else:
+                                    first_5 = audio_values[:5].tolist()
+                                    last_5 = audio_values[-5:].tolist()
+                                    print(f"[{utc_now()}] audio tokens: first_5={first_5}, last_5={last_5}")
+                                
+                                # Show statistics
+                                print(f"[{utc_now()}] audio stats: min={audio_values.min()}, max={audio_values.max()}, mean={audio_values.mean():.1f}, std={audio_values.std():.1f}")
+                            
                             yield (OUT_RATE, audio_array, "mono")
                         elif b'Content-Type: text/plain' in frame:
                             text_data = frame.split(b'\r\n\r\n', 1)[1].decode()
@@ -98,6 +123,10 @@ def response(audio: tuple[int, np.ndarray], conversation: list[dict], img: str |
                             if len(text_data) > 0:
                                 conversation[-1]["content"] = resp_text
                                 yield AdditionalOutputs(conversation)
+                # Log final audio output stats
+                if total_audio_tokens > 0:
+                    total_audio_kb = total_audio_tokens / 1024
+                    print(f"[{utc_now()}] total audio output: {total_audio_kb:.1f}KB")
             except Exception as e:
                raise Exception(f"Error during audio streaming: {e}") from e
             
