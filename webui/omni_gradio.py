@@ -137,7 +137,7 @@ def main(port=None):
         gr.HTML(
             """
         <h1 style='text-align: center'>
-        Zen S2S Model Chat (Powered by WebRTC ⚡️)
+        Zen S2S Model Chat (Lighting Fast⚡️)
         </h1>
         """
         )
